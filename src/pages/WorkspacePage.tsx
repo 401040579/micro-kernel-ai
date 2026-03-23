@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mic, Send, Cpu, Check, Loader2, Smartphone, Monitor, Tablet,
   Wallet, CheckSquare, Users, Sparkles, RotateCcw,
+  Dumbbell, ChefHat, Heart, Map, BookOpen,
+  Moon, Sun,
 } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import { useSimulateGeneration } from '../hooks/useSimulateGeneration'
@@ -13,6 +15,11 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   wallet: Wallet,
   'check-square': CheckSquare,
   users: Users,
+  dumbbell: Dumbbell,
+  'chef-hat': ChefHat,
+  heart: Heart,
+  map: Map,
+  'book-open': BookOpen,
 }
 
 export default function WorkspacePage() {
@@ -20,7 +27,12 @@ export default function WorkspacePage() {
   const [previewDevice, setPreviewDevice] = useState<'mobile' | 'tablet' | 'desktop'>('mobile')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, generation, previewApp, clearMessages, resetGeneration, setPreviewApp } = useStore()
+  const {
+    messages, generation, previewApp,
+    clearMessages, resetGeneration, setPreviewApp,
+    previewDarkMode, togglePreviewDarkMode,
+    setActiveDemo, setDemoFollowUpIndex,
+  } = useStore()
   const { simulateDemo, simulateCustomInput } = useSimulateGeneration()
 
   useEffect(() => {
@@ -44,6 +56,8 @@ export default function WorkspacePage() {
     clearMessages()
     resetGeneration()
     setPreviewApp(null)
+    setActiveDemo(null)
+    setDemoFollowUpIndex(0)
   }
 
   const showInitial = messages.length === 0
@@ -59,7 +73,7 @@ export default function WorkspacePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-center max-w-md"
+                  className="text-center max-w-lg"
                 >
                   <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
                     <Sparkles className="w-8 h-8 text-primary-light" />
@@ -69,20 +83,20 @@ export default function WorkspacePage() {
                     用自然语言描述你想要的应用，或者选择一个Demo场景快速体验
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {demoScenarios.map((demo) => {
                       const Icon = iconMap[demo.icon] || Sparkles
                       return (
                         <button
                           key={demo.id}
                           onClick={() => simulateDemo(demo.id)}
-                          className="flex flex-col items-center gap-2 p-4 bg-bg-secondary/50 border border-border/50 rounded-xl hover:border-primary/50 hover:bg-bg-secondary transition-all cursor-pointer text-left group"
+                          className="flex flex-col items-center gap-1.5 p-3 bg-bg-secondary/50 border border-border/50 rounded-xl hover:border-primary/50 hover:bg-bg-secondary transition-all cursor-pointer text-left group"
                         >
-                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                            <Icon className="w-5 h-5 text-primary-light" />
+                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                            <Icon className="w-4.5 h-4.5 text-primary-light" />
                           </div>
-                          <span className="text-sm font-medium text-center">{demo.name}</span>
-                          <span className="text-xs text-text-secondary text-center">{demo.description}</span>
+                          <span className="text-xs font-medium text-center">{demo.name}</span>
+                          <span className="text-[10px] text-text-secondary text-center leading-tight">{demo.description}</span>
                         </button>
                       )
                     })}
@@ -180,11 +194,19 @@ export default function WorkspacePage() {
                     {generation.steps.map((step) => (
                       <div key={step.name} className="flex items-center gap-2 text-xs">
                         {step.done ? (
-                          <Check className="w-3 h-3 text-success" />
+                          <span className="text-xs w-4 text-center">{step.icon || '✅'}</span>
+                        ) : step.name === generation.currentStep ? (
+                          <Loader2 className="w-3.5 h-3.5 text-primary-light animate-spin ml-0.5" />
                         ) : (
-                          <div className="w-3 h-3 rounded-full border border-text-secondary/30" />
+                          <div className="w-3.5 h-3.5 rounded-full border border-text-secondary/30 ml-0.5" />
                         )}
-                        <span className={step.done ? 'text-text-secondary' : 'text-text-primary'}>
+                        <span className={
+                          step.done
+                            ? 'text-text-secondary line-through'
+                            : step.name === generation.currentStep
+                              ? 'text-primary-light font-medium'
+                              : 'text-text-primary'
+                        }>
                           {step.name}
                         </span>
                       </div>
@@ -215,7 +237,7 @@ export default function WorkspacePage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="输入你的想法..."
+                  placeholder={previewApp ? '输入修改需求，如"加个暗色模式"...' : '输入你的想法...'}
                   rows={1}
                   className="flex-1 bg-transparent border-0 outline-none text-sm text-text-primary placeholder:text-text-secondary/50 px-3 py-2.5 resize-none max-h-24"
                 />
@@ -237,6 +259,16 @@ export default function WorkspacePage() {
           <div className="flex items-center justify-between px-4 py-2 border-b border-border/30">
             <span className="text-xs text-text-secondary">实时预览</span>
             <div className="flex items-center gap-1">
+              {/* Dark mode toggle */}
+              {previewApp && (
+                <button
+                  onClick={togglePreviewDarkMode}
+                  className="p-1.5 rounded-md transition-colors cursor-pointer border-0 text-text-secondary hover:text-text-primary bg-transparent mr-1"
+                  title={previewDarkMode ? '切换亮色' : '切换暗色'}
+                >
+                  {previewDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+              )}
               {([
                 { key: 'mobile', icon: Smartphone },
                 { key: 'tablet', icon: Tablet },
@@ -269,12 +301,7 @@ export default function WorkspacePage() {
                     : 'w-full max-w-[700px] h-[500px]'
                 }`}
               >
-                <div className="flex items-center gap-1.5 px-3 py-2 bg-bg-tertiary/30 border-b border-border/30">
-                  <div className="w-2 h-2 rounded-full bg-red-500/70" />
-                  <div className="w-2 h-2 rounded-full bg-yellow-500/70" />
-                  <div className="w-2 h-2 rounded-full bg-green-500/70" />
-                </div>
-                <div className="h-[calc(100%-28px)]">
+                <div className="h-full">
                   <AppPreview type={previewApp} />
                 </div>
               </div>

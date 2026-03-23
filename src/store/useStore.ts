@@ -30,11 +30,17 @@ export interface Template {
   icon: string
 }
 
+export interface GenerationStep {
+  name: string
+  done: boolean
+  icon?: string
+}
+
 interface GenerationState {
   status: 'idle' | 'understanding' | 'confirming' | 'generating' | 'done'
   progress: number
   currentStep: string
-  steps: { name: string; done: boolean }[]
+  steps: GenerationStep[]
 }
 
 interface AppState {
@@ -57,6 +63,14 @@ interface AppState {
 
   previewApp: string | null
   setPreviewApp: (app: string | null) => void
+
+  previewDarkMode: boolean
+  setPreviewDarkMode: (dark: boolean) => void
+  togglePreviewDarkMode: () => void
+
+  /** Tracks which follow-up index we're at for the current demo */
+  demoFollowUpIndex: number
+  setDemoFollowUpIndex: (idx: number) => void
 }
 
 const initialGeneration: GenerationState = {
@@ -121,4 +135,11 @@ export const useStore = create<AppState>((set) => ({
 
   previewApp: null,
   setPreviewApp: (app) => set({ previewApp: app }),
+
+  previewDarkMode: true,
+  setPreviewDarkMode: (dark) => set({ previewDarkMode: dark }),
+  togglePreviewDarkMode: () => set((state) => ({ previewDarkMode: !state.previewDarkMode })),
+
+  demoFollowUpIndex: 0,
+  setDemoFollowUpIndex: (idx) => set({ demoFollowUpIndex: idx }),
 }))
