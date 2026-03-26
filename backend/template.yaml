@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: MicroKernel AI - Serverless Backend
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        USERS_TABLE: !Ref MicroKernelUsers
+        PROJECTS_TABLE: !Ref MicroKernelProjects
+        ANTHROPIC_API_KEY_SSM_PATH: /app/anthropic-api-key
+    Architectures:
+      - arm64
+
+Parameters:
+  AllowedOrigin:
+    Type: String
+    Default: 'https://401040579.github.io'
+    Description: CORS allowed origin (GitHub Pages domain)
+
+Resources:
+  # ---- HTTP API ----
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: '$default'
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedOrigin
+          - 'http://localhost:5173'
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        MaxAge: 86400
+
+  # ---- DynamoDB Tables ----
+  MicroKernelUsers:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MicroKernelUsers
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
+  MicroKernelProjects:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MicroKernelProjects
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: projectId
+          KeyType: RANGE
+
+  # ---- Lambda Functions ----
+  GenerateAppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/generateApp.handler
+      CodeUri: .
+      Description: Analyze user requirements and generate app structure via Claude API
+      Timeout: 60
+      MemorySize: 512
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MicroKernelProjects
+        - SSMParameterReadPolicy:
+            ParameterName: app/anthropic-api-key
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/generate
+            Method: POST
+
+  IterateAppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/iterateApp.handler
+      CodeUri: .
+      Description: Iterate on existing app structure via Claude API
+      Timeout: 60
+      MemorySize: 512
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MicroKernelProjects
+        - SSMParameterReadPolicy:
+            ParameterName: app/anthropic-api-key
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/iterate
+            Method: POST
+
+  SaveProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/saveProject.handler
+      CodeUri: .
+      Description: Save project to DynamoDB
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MicroKernelProjects
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/projects
+            Method: POST
+
+  GetProjectsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/getProjects.handler
+      CodeUri: .
+      Description: Get all projects for a user
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MicroKernelProjects
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/projects
+            Method: GET
+
+  GetProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/getProject.handler
+      CodeUri: .
+      Description: Get a single project by ID
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MicroKernelProjects
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/projects/{projectId}
+            Method: GET
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
