@@ -1,7 +1,7 @@
 {
   "name": "MicroKernel AI",
   "short_name": "MicroKernel",
-  "description": "用自然语言创造软件 - AI驱动的全栈应用生成平台",
+  "description": "Create software with natural language - AI-powered full-stack app generation platform",
   "start_url": "/micro-kernel-ai/",
   "scope": "/micro-kernel-ai/",
   "display": "standalone",

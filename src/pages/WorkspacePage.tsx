@@ -8,8 +8,9 @@ import {
 } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import { useSimulateGeneration } from '../hooks/useSimulateGeneration'
-import { demoScenarios } from '../data/demos'
+import { getDemoScenarios } from '../data/demos'
 import AppPreview from '../components/AppPreview'
+import { useI18n } from '../i18n'
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   wallet: Wallet,
@@ -26,6 +27,7 @@ export default function WorkspacePage() {
   const [input, setInput] = useState('')
   const [previewDevice, setPreviewDevice] = useState<'mobile' | 'tablet' | 'desktop'>('mobile')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { t } = useI18n()
 
   const {
     messages, generation, previewApp,
@@ -34,6 +36,8 @@ export default function WorkspacePage() {
     setActiveDemo, setDemoFollowUpIndex,
   } = useStore()
   const { simulateDemo, simulateCustomInput } = useSimulateGeneration()
+
+  const demoScenarios = getDemoScenarios()
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -78,9 +82,9 @@ export default function WorkspacePage() {
                   <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
                     <Sparkles className="w-8 h-8 text-primary-light" />
                   </div>
-                  <h2 className="text-xl font-semibold mb-2">告诉我你的想法</h2>
+                  <h2 className="text-xl font-semibold mb-2">{t('workspace.tellIdea')}</h2>
                   <p className="text-sm text-text-secondary mb-6">
-                    用自然语言描述你想要的应用，或者选择一个Demo场景快速体验
+                    {t('workspace.ideaSubtitle')}
                   </p>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -194,7 +198,7 @@ export default function WorkspacePage() {
                     {generation.steps.map((step) => (
                       <div key={step.name} className="flex items-center gap-2 text-xs">
                         {step.done ? (
-                          <span className="text-xs w-4 text-center">{step.icon || '✅'}</span>
+                          <span className="text-xs w-4 text-center">{step.icon || '\u2705'}</span>
                         ) : step.name === generation.currentStep ? (
                           <Loader2 className="w-3.5 h-3.5 text-primary-light animate-spin ml-0.5" />
                         ) : (
@@ -224,7 +228,7 @@ export default function WorkspacePage() {
                 <button
                   onClick={handleReset}
                   className="p-2 text-text-secondary hover:text-text-primary bg-transparent border-0 cursor-pointer transition-colors shrink-0"
-                  title="重新开始"
+                  title={t('workspace.resetTitle')}
                 >
                   <RotateCcw className="w-5 h-5" />
                 </button>
@@ -237,7 +241,7 @@ export default function WorkspacePage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={previewApp ? '输入修改需求，如"加个暗色模式"...' : '输入你的想法...'}
+                  placeholder={previewApp ? t('workspace.inputPlaceholderWithPreview') : t('workspace.inputPlaceholder')}
                   rows={1}
                   className="flex-1 bg-transparent border-0 outline-none text-sm text-text-primary placeholder:text-text-secondary/50 px-3 py-2.5 resize-none max-h-24"
                 />
@@ -257,14 +261,14 @@ export default function WorkspacePage() {
         <div className="flex-1 lg:w-1/2 flex flex-col min-h-0 bg-bg-primary/50">
           {/* Preview toolbar */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-border/30">
-            <span className="text-xs text-text-secondary">实时预览</span>
+            <span className="text-xs text-text-secondary">{t('workspace.livePreview')}</span>
             <div className="flex items-center gap-1">
               {/* Dark mode toggle */}
               {previewApp && (
                 <button
                   onClick={togglePreviewDarkMode}
                   className="p-1.5 rounded-md transition-colors cursor-pointer border-0 text-text-secondary hover:text-text-primary bg-transparent mr-1"
-                  title={previewDarkMode ? '切换亮色' : '切换暗色'}
+                  title={previewDarkMode ? t('workspace.toggleLight') : t('workspace.toggleDark')}
                 >
                   {previewDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </button>
@@ -310,8 +314,8 @@ export default function WorkspacePage() {
                 <div className="w-20 h-20 rounded-2xl bg-bg-secondary/50 border border-border/30 flex items-center justify-center mx-auto mb-4">
                   <Monitor className="w-10 h-10 text-text-secondary/30" />
                 </div>
-                <p className="text-sm">在左侧输入需求或选择Demo场景</p>
-                <p className="text-xs mt-1 text-text-secondary/60">预览将在这里展示</p>
+                <p className="text-sm">{t('workspace.previewHint')}</p>
+                <p className="text-xs mt-1 text-text-secondary/60">{t('workspace.previewSubHint')}</p>
               </div>
             )}
           </div>

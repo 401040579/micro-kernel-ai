@@ -8,6 +8,7 @@ import {
   GraduationCap, Dumbbell, Package, Car, School,
 } from 'lucide-react'
 import { templates, categories } from '../data/templates'
+import { useTranslations, useI18n } from '../i18n'
 
 const iconComponents: Record<string, React.ComponentType<any>> = {
   wallet: Wallet,
@@ -36,12 +37,26 @@ const iconComponents: Record<string, React.ComponentType<any>> = {
 
 export default function TemplatesPage() {
   const navigate = useNavigate()
-  const [activeCategory, setActiveCategory] = useState('全部')
+  const tr = useTranslations()
+  const { t } = useI18n()
+
+  const catMap = tr.templates.categories as Record<string, string>
+  const itemMap = tr.templates.items as Record<string, { name: string; desc: string }>
+
+  const [activeCategory, setActiveCategory] = useState(categories[0])
   const [searchQuery, setSearchQuery] = useState('')
 
-  const filtered = templates.filter((t) => {
-    const matchCategory = activeCategory === '全部' || t.category === activeCategory
-    const matchSearch = !searchQuery || t.name.includes(searchQuery) || t.description.includes(searchQuery)
+  const filtered = templates.filter((tmpl) => {
+    const matchCategory = activeCategory === categories[0] || tmpl.category === activeCategory
+    const translatedItem = itemMap[tmpl.name]
+    const displayName = translatedItem?.name ?? tmpl.name
+    const displayDesc = translatedItem?.desc ?? tmpl.description
+    const matchSearch =
+      !searchQuery ||
+      displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      displayDesc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tmpl.name.includes(searchQuery) ||
+      tmpl.description.includes(searchQuery)
     return matchCategory && matchSearch
   })
 
@@ -51,8 +66,8 @@ export default function TemplatesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold mb-1">模板市场</h1>
-            <p className="text-sm text-text-secondary">从模板开始，快速定制你的专属应用</p>
+            <h1 className="text-2xl font-bold mb-1">{t('templates.title')}</h1>
+            <p className="text-sm text-text-secondary">{t('templates.subtitle')}</p>
           </div>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
@@ -60,7 +75,7 @@ export default function TemplatesPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="搜索模板..."
+              placeholder={t('templates.searchPlaceholder')}
               className="w-full bg-bg-secondary border border-border/50 rounded-xl pl-9 pr-3 py-2 text-sm text-text-primary placeholder:text-text-secondary/50 outline-none focus:border-primary/50 transition-colors"
             />
           </div>
@@ -78,7 +93,7 @@ export default function TemplatesPage() {
                   : 'bg-bg-secondary/50 border-border/50 text-text-secondary hover:text-text-primary hover:border-border'
               }`}
             >
-              {cat}
+              {catMap[cat] ?? cat}
             </button>
           ))}
         </div>
@@ -90,6 +105,9 @@ export default function TemplatesPage() {
         >
           {filtered.map((template, i) => {
             const Icon = iconComponents[template.icon] || Palette
+            const translatedItem = itemMap[template.name]
+            const displayName = translatedItem?.name ?? template.name
+            const displayDesc = translatedItem?.desc ?? template.description
             return (
               <motion.div
                 key={template.id}
@@ -115,9 +133,9 @@ export default function TemplatesPage() {
 
                 {/* Info */}
                 <div className="p-4">
-                  <h3 className="text-sm font-semibold mb-1">{template.name}</h3>
+                  <h3 className="text-sm font-semibold mb-1">{displayName}</h3>
                   <p className="text-xs text-text-secondary leading-relaxed mb-3 line-clamp-2">
-                    {template.description}
+                    {displayDesc}
                   </p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1 text-xs text-text-secondary">
@@ -126,7 +144,7 @@ export default function TemplatesPage() {
                       <span className="text-text-secondary/50">({template.usageCount})</span>
                     </div>
                     <span className="text-xs text-primary-light opacity-0 group-hover:opacity-100 transition-opacity">
-                      使用模板 →
+                      {t('templates.useTemplate')} &rarr;
                     </span>
                   </div>
                 </div>

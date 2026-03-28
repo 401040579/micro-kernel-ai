@@ -1,27 +1,48 @@
 import { useCallback, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { demoScenarios } from '../data/demos'
+import { getDemoScenarios } from '../data/demos'
+import { getTranslations } from '../i18n'
 
-/** Icons for generation steps - mapped by keyword */
+/** Icons for generation steps - mapped by keyword (works for both EN and ZH) */
 const stepIconMap: Record<string, string> = {
-  '分析需求': '🔍',
-  '设计数据': '🗂️',
-  '生成页面': '🖼️',
-  '添加交互': '⚡',
-  '生成运动': '📊',
-  '生成菜谱': '🍽️',
-  '生成宠物': '🐾',
-  '生成地图': '🗺️',
-  '生成书架': '📚',
-  '优化性能': '🚀',
-  '完成': '✅',
+  // Chinese keywords
+  '分析需求': '\uD83D\uDD0D',
+  '设计数据': '\uD83D\uDDC2\uFE0F',
+  '生成页面': '\uD83D\uDDBC\uFE0F',
+  '添加交互': '\u26A1',
+  '生成运动': '\uD83D\uDCCA',
+  '生成菜谱': '\uD83C\uDF7D\uFE0F',
+  '生成宠物': '\uD83D\uDC3E',
+  '生成地图': '\uD83D\uDDFA\uFE0F',
+  '生成书架': '\uD83D\uDCDA',
+  '优化性能': '\uD83D\uDE80',
+  '完成': '\u2705',
+  // English keywords
+  'Analyzing': '\uD83D\uDD0D',
+  'Designing': '\uD83D\uDDC2\uFE0F',
+  'Generating page': '\uD83D\uDDBC\uFE0F',
+  'Adding': '\u26A1',
+  'Generating workout': '\uD83D\uDCCA',
+  'Generating recipe': '\uD83C\uDF7D\uFE0F',
+  'Generating pet': '\uD83D\uDC3E',
+  'Generating map': '\uD83D\uDDFA\uFE0F',
+  'Generating bookshelf': '\uD83D\uDCDA',
+  'Optimizing': '\uD83D\uDE80',
+  'Done': '\u2705',
+  // Modify flow
+  '分析修改': '\uD83D\uDD0D',
+  '更新页面': '\uD83D\uDDBC\uFE0F',
+  '重新渲染': '\uD83D\uDD04',
+  'Analyzing modification': '\uD83D\uDD0D',
+  'Updating': '\uD83D\uDDBC\uFE0F',
+  'Re-rendering': '\uD83D\uDD04',
 }
 
 function getStepIcon(stepName: string): string {
   for (const [keyword, icon] of Object.entries(stepIconMap)) {
     if (stepName.includes(keyword)) return icon
   }
-  return '⚙️'
+  return '\u2699\uFE0F'
 }
 
 /** Detect dark-mode related requests */
@@ -59,8 +80,11 @@ export function useSimulateGeneration() {
     (demoId: string) => {
       clearTimers()
       resetGeneration()
-      const scenario = demoScenarios.find((d) => d.id === demoId)
+      const scenarios = getDemoScenarios()
+      const scenario = scenarios.find((d) => d.id === demoId)
       if (!scenario) return
+
+      const tr = getTranslations()
 
       setActiveDemo(demoId)
       setDemoFollowUpIndex(0)
@@ -70,7 +94,7 @@ export function useSimulateGeneration() {
 
       // Step 2: AI understanding (after 800ms)
       const t1 = setTimeout(() => {
-        setGeneration({ status: 'understanding', currentStep: '正在理解你的需求...' })
+        setGeneration({ status: 'understanding', currentStep: tr.generation.understanding })
       }, 800)
       timerRef.current.push(t1)
 
@@ -123,8 +147,7 @@ export function useSimulateGeneration() {
         setPreviewApp(scenario.previewType)
         addMessage({
           role: 'ai',
-          content:
-            '你的应用已生成！可以在右侧预览效果。\n\n你可以继续说出修改需求，比如：\n- "加个暗色模式"\n- "加一个搜索功能"\n- "加个分享功能"',
+          content: tr.generation.appGenerated,
         })
       }, totalDelay)
       timerRef.current.push(tDone)
@@ -137,10 +160,12 @@ export function useSimulateGeneration() {
       addMessage({ role: 'user', content: input })
       clearTimers()
 
+      const tr = getTranslations()
       const state = useStore.getState()
       const activeDemo = state.activeDemo
       const followUpIdx = state.demoFollowUpIndex
-      const scenario = activeDemo ? demoScenarios.find((d) => d.id === activeDemo) : null
+      const scenarios = getDemoScenarios()
+      const scenario = activeDemo ? scenarios.find((d) => d.id === activeDemo) : null
       const followUp = scenario?.followUps?.[followUpIdx]
 
       // Check for special modification requests
@@ -150,16 +175,16 @@ export function useSimulateGeneration() {
 
       // Generate modification steps
       const modSteps = [
-        { name: '分析修改需求...', done: false, icon: '🔍' },
-        { name: '更新页面组件...', done: false, icon: '🖼️' },
-        { name: '重新渲染预览...', done: false, icon: '🔄' },
-        { name: '完成！', done: false, icon: '✅' },
+        { name: tr.generation.analyzingModify, done: false, icon: '\uD83D\uDD0D' },
+        { name: tr.generation.updatingComponents, done: false, icon: '\uD83D\uDDBC\uFE0F' },
+        { name: tr.generation.reRendering, done: false, icon: '\uD83D\uDD04' },
+        { name: tr.generation.done, done: false, icon: '\u2705' },
       ]
 
       const t1 = setTimeout(() => {
         setGeneration({
           status: 'understanding',
-          currentStep: '正在理解你的修改需求...',
+          currentStep: tr.generation.understandingModify,
         })
       }, 500)
       timerRef.current.push(t1)
@@ -212,22 +237,22 @@ export function useSimulateGeneration() {
         } else if (isDarkMode) {
           addMessage({
             role: 'ai',
-            content: '已切换到暗色模式！界面更柔和，适合在昏暗环境下使用。你可以在右侧预览中看到效果。\n\n继续提出修改需求吧！',
+            content: tr.generation.darkModeResponse,
           })
         } else if (isLightMode) {
           addMessage({
             role: 'ai',
-            content: '已切换到亮色模式！界面更清爽明亮。你可以在右侧预览中看到效果。\n\n继续提出修改需求吧！',
+            content: tr.generation.lightModeResponse,
           })
         } else if (isShare) {
           addMessage({
             role: 'ai',
-            content: '已添加分享功能！现在可以将内容一键分享到微信、朋友圈等社交平台，还支持生成精美卡片图片。\n\n还有什么需要修改的吗？',
+            content: tr.generation.shareResponse,
           })
         } else {
           addMessage({
             role: 'ai',
-            content: `好的，已根据你的要求进行了修改："${input}"。\n\n请在右侧查看更新后的预览效果。你可以继续提出修改需求。`,
+            content: tr.generation.customModifyResponse(input),
           })
           // Advance follow-up index even for custom input so next follow-up is fresh
           if (scenario?.followUps && followUpIdx < scenario.followUps.length) {

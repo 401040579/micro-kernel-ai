@@ -1,13 +1,16 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Cpu, LayoutGrid, FolderOpen, Sparkles } from 'lucide-react'
+import { useI18n } from '../i18n'
+import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Navbar() {
   const location = useLocation()
+  const { t } = useI18n()
 
   const links = [
-    { to: '/workspace', label: '工作台', icon: Sparkles },
-    { to: '/templates', label: '模板市场', icon: LayoutGrid },
-    { to: '/projects', label: '我的项目', icon: FolderOpen },
+    { to: '/workspace', label: t('navbar.workspace'), icon: Sparkles },
+    { to: '/templates', label: t('navbar.templates'), icon: LayoutGrid },
+    { to: '/projects', label: t('navbar.projects'), icon: FolderOpen },
   ]
 
   return (
@@ -42,6 +45,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-xs font-medium text-white">
             U
           </div>
